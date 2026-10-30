@@ -13,7 +13,7 @@ concurrency:
 jobs:
   mirror-to-epitech:
     name: Miroir vers le dépôt Epitech
-    if: github.repository == '<user>/<repo-prive>'
+    if: github.repository == 'AdrienGregoire/EpiQuest'
     runs-on: ubuntu-latest
 
     steps:
