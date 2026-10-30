@@ -1,0 +1,41 @@
+name: CD
+
+on:
+  push:
+    branches:
+      - main
+      - develop
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  mirror-to-epitech:
+    name: Miroir vers le dépôt Epitech
+    if: github.repository == '<user>/<repo-prive>'
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Vérification des secrets
+        shell: bash
+        env:
+          MIRROR_REPO_URL: ${{ secrets.MIRROR_REPO_URL }}
+          MIRROR_SSH_KEY: ${{ secrets.MIRROR_SSH_KEY }}
+        run: |
+          if [ -z "$MIRROR_REPO_URL" ] || [ -z "$MIRROR_SSH_KEY" ]; then
+            echo "Erreur: MIRROR_REPO_URL ou MIRROR_SSH_KEY est vide ou introuvable."
+            exit 1
+          fi
+          echo "Succès: les secrets existent."
+
+      - name: Récupération du code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Mirroring
+        uses: pixta-dev/repository-mirroring-action@v1
+        with:
+          target_repo_url: ${{ secrets.MIRROR_REPO_URL }}
+          ssh_private_key: ${{ secrets.MIRROR_SSH_KEY }}

@@ -1,0 +1,60 @@
+name: CI
+
+on:
+  pull_request:
+    branches:
+      - main
+      - develop
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  gitflow-check:
+    name: Vérification du GitFlow
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Vérification du GitFlow
+        if: github.base_ref == 'main'
+        shell: bash
+        run: |
+          if [ "${{ github.head_ref }}" != "develop" ]; then
+            echo "Erreur: '${{ github.head_ref }}' n'a pas le droit d'être fusionnée dans 'main'."
+            echo "La branche 'main' n'accepte que des Pull Requests provenant de la branche 'develop'."
+            exit 1
+          fi
+          echo "Succès: Fusion de develop vers main autorisée."
+
+  rust-checks:
+    name: Lint, tests et build
+    needs: gitflow-check
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Récupération du code
+        uses: actions/checkout@v4
+
+      - name: Installation de Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt, clippy
+
+      - name: Cache des dépendances
+        uses: Swatinem/rust-cache@v2
+
+      - name: Format
+        run: cargo fmt --all --check
+
+      - name: Lint (clippy)
+        run: cargo clippy --workspace --all-targets --locked -- -D warnings
+
+      - name: Tests
+        run: cargo test --workspace --locked
+
+      - name: Build
+        run: cargo build --workspace --locked
