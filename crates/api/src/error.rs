@@ -47,10 +47,10 @@ impl IntoResponse for AppError {
 
 impl From<sqlx::Error> for AppError {
     fn from(err: sqlx::Error) -> Self {
-        if let sqlx::Error::Database(ref db_err) = err {
-            if db_err.code().as_deref() == Some("23505") {
-                return AppError::Conflict("Username or email already exists".to_string());
-            }
+        if let sqlx::Error::Database(ref db_err) = err
+            && db_err.code().as_deref() == Some("23505")
+        {
+            return AppError::Conflict("Username or email already exists".to_string());
         }
         AppError::Internal(err.to_string())
     }
