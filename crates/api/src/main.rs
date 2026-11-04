@@ -5,19 +5,13 @@
 ** main file
 */
 
-use axum::Router;
 use dotenvy::dotenv;
 use sqlx::postgres::PgPoolOptions;
 use std::env;
 
-mod auth;
-mod error;
-mod models;
-mod routes;
-
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    dotenv().expect("Unable to load the .env file");
+    dotenv().ok();
     tracing_subscriber::fmt()
         .with_env_filter(tracing_subscriber::EnvFilter::from_default_env())
         .init();
@@ -27,12 +21,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .connect(&database_url)
         .await?;
     sqlx::migrate!("./migrations").run(&pool).await?;
-    let app: Router = axum::Router::new()
-        .route(
-            "/auth/register",
-            axum::routing::post(routes::auth::register),
-        )
-        .with_state(pool);
+    let app = api::create_app(pool);
     let host = env::var("HOST").unwrap_or_else(|_| "127.0.0.1".to_string());
     let port = env::var("PORT").unwrap_or_else(|_| "8080".to_string());
     let listener = tokio::net::TcpListener::bind(format!("{host}:{port}")).await?;
