@@ -6,6 +6,7 @@
 */
 
 mod auth;
+mod error;
 mod models;
 
 fn main() {
