@@ -9,7 +9,7 @@ use rand_core::{OsRng, RngCore};
 use sha2::{Digest, Sha256};
 use std::fmt::Write;
 
-pub const SESSION_COOOKIE: &str = "session";
+pub const SESSION_COOKIE: &str = "session";
 pub const SESSION_TTL_SECS: i64 = 7 * 24 * 60 * 60;
 
 fn to_hex(bytes: &[u8]) -> String {
