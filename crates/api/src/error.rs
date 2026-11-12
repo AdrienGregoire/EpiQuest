@@ -5,7 +5,6 @@
 ** application errors
 */
 
-
 use axum::{
     Json,
     http::StatusCode,
