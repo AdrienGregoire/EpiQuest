@@ -37,3 +37,27 @@ pub fn cookie_secure() -> bool {
         .map(|v| v != "false")
         .unwrap_or(true)
 }
+
+//Unit Tests
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_token_has_expected_length() {
+        assert_eq!(generate_token().len(), 64);
+    }
+
+    #[test]
+    fn test_tokens_are_unique() {
+        assert_ne!(generate_token(), generate_token());
+    }
+
+    #[test]
+    fn test_hash_is_deterministic_and_differs_from_token() {
+        let token = generate_token();
+
+        assert_eq!(hash_token(&token), hash_token(&token));
+        assert_ne!(hash_token(&token), token);
+    }
+}
