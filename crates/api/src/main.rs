@@ -1,9 +1,9 @@
 /*
-** EPITECH PROJECT, 2026
-** main.rs
-** File description:
-** main file
-*/
+ ** EPITECH PROJECT, 2026
+ ** main.rs
+ ** File description:
+ ** main file
+ */
 
 use dotenvy::dotenv;
 use sqlx::postgres::PgPoolOptions;

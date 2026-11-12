@@ -1,9 +1,9 @@
 /*
-** EPITECH PROJECT, 2026
-** password.rs
-** File description:
-** password functions
-*/
+ ** EPITECH PROJECT, 2026
+ ** password.rs
+ ** File description:
+ ** password functions
+ */
 
 use argon2::{
     Argon2,

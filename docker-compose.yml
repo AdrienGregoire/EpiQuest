@@ -27,6 +27,7 @@ services:
       PORT: ${PORT}
       RUST_LOG: ${RUST_LOG}
       DATABASE_URL: postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}
+      COOKIE_SECURE: ${COOKIE_SECURE}
     ports:
       - "${PORT}:${PORT}"
     volumes:

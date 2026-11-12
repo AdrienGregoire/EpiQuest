@@ -1,9 +1,9 @@
 /*
-** EPITECH PROJECT, 2026
-** user.rs
-** File description:
-** user functions
-*/
+ ** EPITECH PROJECT, 2026
+ ** user.rs
+ ** File description:
+ ** user functions
+ */
 
 use chrono::{DateTime, Utc};
 use sqlx::{FromRow, PgPool};
@@ -49,5 +49,16 @@ impl User {
         .bind(email)
         .fetch_optional(pool)
         .await
+    }
+}
+
+impl From<User> for shared::UserResponse {
+    fn from(user: User) -> Self {
+        Self {
+            id: user.id,
+            username: user.username,
+            email: user.email,
+            created_at: user.created_at,
+        }
     }
 }
