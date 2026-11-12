@@ -1,9 +1,9 @@
 /*
-** EPITECH PROJECT, 2026
-** error.rs
-** File description:
-** application errors
-*/
+ ** EPITECH PROJECT, 2026
+ ** error.rs
+ ** File description:
+ ** application errors
+ */
 
 use axum::{
     Json,

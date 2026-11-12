@@ -1,9 +1,9 @@
 /*
-** EPITECH PROJECT, 2026
-** session.rs
-** File description:
-** session functions
-*/
+ ** EPITECH PROJECT, 2026
+ ** session.rs
+ ** File description:
+ ** session functions
+ */
 
 use chrono::{DateTime, TimeDelta, Utc};
 use sqlx::{FromRow, PgPool};

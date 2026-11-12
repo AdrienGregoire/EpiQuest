@@ -1,9 +1,9 @@
 /*
-** EPITECH PROJECT, 2026
-** login.rs
-** File description:
-** integration tests for login and sessions
-*/
+ ** EPITECH PROJECT, 2026
+ ** login.rs
+ ** File description:
+ ** integration tests for login and sessions
+ */
 
 use api::{
     auth::session::{SESSION_COOKIE, hash_token},

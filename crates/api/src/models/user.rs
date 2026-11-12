@@ -1,9 +1,9 @@
 /*
-** EPITECH PROJECT, 2026
-** user.rs
-** File description:
-** user functions
-*/
+ ** EPITECH PROJECT, 2026
+ ** user.rs
+ ** File description:
+ ** user functions
+ */
 
 use chrono::{DateTime, Utc};
 use sqlx::{FromRow, PgPool};

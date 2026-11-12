@@ -1,9 +1,9 @@
 /*
-** EPITECH PROJECT, 2026
-** auth.rs
-** File description:
-** auth routes and handlers
-*/
+ ** EPITECH PROJECT, 2026
+ ** auth.rs
+ ** File description:
+ ** auth routes and handlers
+ */
 
 use axum::{Json, extract::State, http::StatusCode};
 use axum_extra::extract::cookie::{Cookie, CookieJar, SameSite};

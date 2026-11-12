@@ -1,9 +1,9 @@
 /*
-** EPITECH PROJECT, 2026
-** lib.rs
-** File description:
-** lib file
-*/
+ ** EPITECH PROJECT, 2026
+ ** lib.rs
+ ** File description:
+ ** lib file
+ */
 
 pub mod auth;
 pub mod error;

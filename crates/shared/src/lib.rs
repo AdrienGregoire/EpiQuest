@@ -1,9 +1,9 @@
 /*
-** EPITECH PROJECT, 2026
-** lib.rs
-** File description:
-** lib file
-*/
+ ** EPITECH PROJECT, 2026
+ ** lib.rs
+ ** File description:
+ ** lib file
+ */
 
 use chrono::DateTime;
 use serde::{Deserialize, Serialize};

@@ -1,9 +1,9 @@
 /*
-** EPITECH PROJECT, 2026
-** extractor.rs
-** File description:
-** authenticated user extractor
-*/
+ ** EPITECH PROJECT, 2026
+ ** extractor.rs
+ ** File description:
+ ** authenticated user extractor
+ */
 
 use axum::{extract::FromRequestParts, http::request::Parts};
 use axum_extra::extract::cookie::CookieJar;

@@ -1,9 +1,9 @@
 /*
-** EPITECH PROJECT, 2026
-** session.rs
-** File description:
-** session token helpers
-*/
+ ** EPITECH PROJECT, 2026
+ ** session.rs
+ ** File description:
+ ** session token helpers
+ */
 
 use rand_core::{OsRng, RngCore};
 use sha2::{Digest, Sha256};
