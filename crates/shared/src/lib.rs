@@ -17,6 +17,12 @@ pub struct RegisterRequest {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct LoginRequest {
+    pub email: String,
+    pub password: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct UserResponse {
     pub id: Uuid,
     pub username: String,
