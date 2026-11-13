@@ -23,5 +23,15 @@ pub fn create_app(pool: PgPool) -> Router {
         .route("/auth/logout", post(routes::auth::logout))
         .route("/auth/logout-all", post(routes::auth::logout_all))
         .route("/auth/me", get(routes::auth::me))
+        .route(
+            "/campaigns",
+            post(routes::campaigns::create_campaign).get(routes::campaigns::list_campaigns),
+        )
+        .route(
+            "/campaigns/{id}",
+            get(routes::campaigns::get_campaign)
+                .patch(routes::campaigns::update_campaign)
+                .delete(routes::campaigns::delete_campaign),
+        )
         .with_state(pool)
 }
