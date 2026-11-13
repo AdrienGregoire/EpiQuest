@@ -5,5 +5,6 @@
  ** mod file
  */
 
+pub mod campaign;
 pub mod session;
 pub mod user;
