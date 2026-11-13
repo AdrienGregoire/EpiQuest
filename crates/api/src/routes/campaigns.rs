@@ -57,7 +57,7 @@ async fn find_owned(pool: &PgPool, id: Uuid, user_id: Uuid) -> Result<Campaign, 
     Ok(campaign)
 }
 
-pub async fn creat_campaign(
+pub async fn create_campaign(
     State(pool): State<PgPool>,
     auth: AuthUser,
     Json(payload): Json<CreateCampaignRequest>,
