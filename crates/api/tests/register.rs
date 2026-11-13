@@ -1,9 +1,9 @@
 /*
-** EPITECH PROJECT, 2026
-** register.rs
-** File description:
-** integration tests for user registration
-*/
+ ** EPITECH PROJECT, 2026
+ ** register.rs
+ ** File description:
+ ** integration tests for user registration
+ */
 
 use api::create_app;
 use axum::{

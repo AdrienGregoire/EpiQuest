@@ -1,9 +1,9 @@
 /*
-** EPITECH PROJECT, 2026
-** error.rs
-** File description:
-** application errors
-*/
+ ** EPITECH PROJECT, 2026
+ ** error.rs
+ ** File description:
+ ** application errors
+ */
 
 use axum::{
     Json,
@@ -23,6 +23,15 @@ pub enum AppError {
 
     #[error("Internal: {0}")]
     Internal(String),
+
+    #[error("Unauthorized: {0}")]
+    Unauthorized(String),
+
+    #[error("Forbidden: {0}")]
+    Forbidden(String),
+
+    #[error("Not found: {0}")]
+    NotFound(String),
 }
 
 impl IntoResponse for AppError {
@@ -37,6 +46,9 @@ impl IntoResponse for AppError {
                     "Internal server error".to_string(),
                 )
             }
+            AppError::Unauthorized(msg) => (StatusCode::UNAUTHORIZED, msg),
+            AppError::Forbidden(msg) => (StatusCode::FORBIDDEN, msg),
+            AppError::NotFound(msg) => (StatusCode::NOT_FOUND, msg),
         };
         let body = Json(json!({
             "error": error_message,
