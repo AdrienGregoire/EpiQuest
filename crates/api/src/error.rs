@@ -26,6 +26,12 @@ pub enum AppError {
 
     #[error("Unauthorized: {0}")]
     Unauthorized(String),
+
+    #[error("Forbidden: {0}")]
+    Forbidden(String),
+
+    #[error("Not found: {0}")]
+    NotFound(String),
 }
 
 impl IntoResponse for AppError {
@@ -41,6 +47,8 @@ impl IntoResponse for AppError {
                 )
             }
             AppError::Unauthorized(msg) => (StatusCode::UNAUTHORIZED, msg),
+            AppError::Forbidden(msg) => (StatusCode::FORBIDDEN, msg),
+            AppError::NotFound(msg) => (StatusCode::NOT_FOUND, msg),
         };
         let body = Json(json!({
             "error": error_message,
