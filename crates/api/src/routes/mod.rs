@@ -6,3 +6,4 @@
  */
 
 pub mod auth;
+pub mod campaigns;

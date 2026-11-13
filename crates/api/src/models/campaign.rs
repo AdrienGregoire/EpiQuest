@@ -20,14 +20,24 @@ pub struct Campaign {
 }
 
 impl Campaign {
-    pub async fn create(pool: &PgPool, gm_id: Uuid, name: &str, description: &str) -> Result<Campaign, sqlx::Error> {
+    pub async fn create(
+        pool: &PgPool,
+        gm_id: Uuid,
+        name: &str,
+        description: &str,
+    ) -> Result<Campaign, sqlx::Error> {
         sqlx::query_as::<_, Campaign>(
             r#"
             INSERT INTO campaigns (gm_id, name, description)
             VALUES ($1, $2, $3)
             RETURNING id, gm_id, name, description, created_at, updated_at
             "#,
-        ).bind(gm_id).bind(name).bind(description).fetch_one(pool).await
+        )
+        .bind(gm_id)
+        .bind(name)
+        .bind(description)
+        .fetch_one(pool)
+        .await
     }
 
     pub async fn find_by_id(pool: &PgPool, id: Uuid) -> Result<Option<Campaign>, sqlx::Error> {
@@ -37,7 +47,10 @@ impl Campaign {
             FROM campaigns
             WHERE id = $1
             "#,
-        ).bind(id).fetch_optional(pool).await
+        )
+        .bind(id)
+        .fetch_optional(pool)
+        .await
     }
 
     pub async fn list_by_gm(pool: &PgPool, gm_id: Uuid) -> Result<Vec<Campaign>, sqlx::Error> {
@@ -48,10 +61,18 @@ impl Campaign {
             WHERE gm_id = $1
             ORDER BY created_at DESC
             "#,
-        ).bind(gm_id).fetch_all(pool).await
+        )
+        .bind(gm_id)
+        .fetch_all(pool)
+        .await
     }
 
-    pub async fn update(pool: &PgPool, id: Uuid, name: Option<&str>, description: Option<&str>,) -> Result<Option<Campaign>, sqlx::Error> {
+    pub async fn update(
+        pool: &PgPool,
+        id: Uuid,
+        name: Option<&str>,
+        description: Option<&str>,
+    ) -> Result<Option<Campaign>, sqlx::Error> {
         sqlx::query_as::<_, Campaign>(
             r#"
             UPDATE campaigns
@@ -61,11 +82,19 @@ impl Campaign {
             WHERE id = $1
             RETURNING id, gm_id, name, description, created_at, updated_at
             "#,
-        ).bind(id).bind(name).bind(description).fetch_optional(pool).await
+        )
+        .bind(id)
+        .bind(name)
+        .bind(description)
+        .fetch_optional(pool)
+        .await
     }
 
     pub async fn delete(pool: &PgPool, id: Uuid) -> Result<(), sqlx::Error> {
-        sqlx::query("DELETE FROM campaigns WHERE id = $1").bind(id).execute(pool).await?;
+        sqlx::query("DELETE FROM campaigns WHERE id = $1")
+            .bind(id)
+            .execute(pool)
+            .await?;
         Ok(())
     }
 }
