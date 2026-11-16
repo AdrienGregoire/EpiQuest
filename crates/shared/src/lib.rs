@@ -52,3 +52,25 @@ pub struct CampaignResponse {
     pub created_at: DateTime<chrono::Utc>,
     pub updated_at: DateTime<chrono::Utc>,
 }
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct JoinCampaignRequest {
+    pub code: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct InviteResponse {
+    pub id: Uuid,
+    pub campaign_id: Uuid,
+    pub code: String,
+    pub created_at: DateTime<chrono::Utc>,
+    pub expires_at: DateTime<chrono::Utc>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct MemberResponse {
+    pub user_id: Uuid,
+    pub username: String,
+    pub role: String,
+    pub joined_at: DateTime<chrono::Utc>,
+}
