@@ -67,6 +67,24 @@ impl Campaign {
         .await
     }
 
+    pub async fn list_joined_by(
+        pool: &PgPool,
+        user_id: Uuid,
+    ) -> Result<Vec<Campaign>, sqlx::Error> {
+        sqlx::query_as::<_, Campaign>(
+            r#"
+            SELECT c.id, c.gm_id, c.name, c.description, c.created_at, c.updated_at
+            FROM campaigns c
+            JOIN campaign_members m ON m.campaign_id = c.id
+            WHERE m.user_id = $1
+            ORDER BY m.joined_at DESC
+            "#,
+        )
+        .bind(user_id)
+        .fetch_all(pool)
+        .await
+    }
+
     pub async fn update(
         pool: &PgPool,
         id: Uuid,
