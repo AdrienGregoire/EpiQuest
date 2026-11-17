@@ -123,3 +123,22 @@ impl From<Invite> for shared::InviteResponse {
         }
     }
 }
+
+// Unit Tests
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_code_has_expected_length_and_alphabet() {
+        let code = generate_code();
+
+        assert_eq!(code.len(), CODE_LEN);
+        assert!(code.bytes().all(|byte| CODE_ALPHABET.contains(&byte)));
+    }
+
+    #[test]
+    fn test_codes_are_unique() {
+        assert_ne!(generate_code(), generate_code());
+    }
+}
