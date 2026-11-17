@@ -6,7 +6,7 @@
  */
 
 use axum::{
-    Json,
+    Extension, Json,
     extract::{Path, State},
     http::StatusCode,
 };
@@ -15,34 +15,29 @@ use sqlx::PgPool;
 use uuid::Uuid;
 
 use crate::{
-    auth::extractor::AuthUser,
+    auth::{extractor::AuthUser, permissions::CampaignContext},
     error::AppError,
     models::{
         campaign::Campaign,
         invite::{INVITE_TTL_HOURS, Invite, generate_code},
         member::Member,
     },
-    routes::campaigns::find_owned,
 };
 
 pub async fn create_invite(
     State(pool): State<PgPool>,
-    auth: AuthUser,
-    Path(id): Path<Uuid>,
+    Extension(ctx): Extension<CampaignContext>,
 ) -> Result<(StatusCode, Json<InviteResponse>), AppError> {
-    let campaign = find_owned(&pool, id, auth.user.id).await?;
-    let invite = Invite::create(&pool, campaign.id, &generate_code(), INVITE_TTL_HOURS).await?;
+    let invite = Invite::create(&pool, ctx.campaign.id, &generate_code(), INVITE_TTL_HOURS).await?;
 
     Ok((StatusCode::CREATED, Json(invite.into())))
 }
 
 pub async fn list_invites(
     State(pool): State<PgPool>,
-    auth: AuthUser,
-    Path(id): Path<Uuid>,
+    Extension(ctx): Extension<CampaignContext>,
 ) -> Result<Json<Vec<InviteResponse>>, AppError> {
-    let campaign = find_owned(&pool, id, auth.user.id).await?;
-    let invites = Invite::list_active(&pool, campaign.id).await?;
+    let invites = Invite::list_active(&pool, ctx.campaign.id).await?;
 
     Ok(Json(
         invites.into_iter().map(InviteResponse::from).collect(),
@@ -51,12 +46,10 @@ pub async fn list_invites(
 
 pub async fn revoke_invite(
     State(pool): State<PgPool>,
-    auth: AuthUser,
-    Path((id, invite_id)): Path<(Uuid, Uuid)>,
+    Extension(ctx): Extension<CampaignContext>,
+    Path((_, invite_id)): Path<(Uuid, Uuid)>,
 ) -> Result<StatusCode, AppError> {
-    let campaign = find_owned(&pool, id, auth.user.id).await?;
-
-    if !Invite::revoke(&pool, campaign.id, invite_id).await? {
+    if !Invite::revoke(&pool, ctx.campaign.id, invite_id).await? {
         return Err(AppError::NotFound("Invite not found".to_string()));
     }
     Ok(StatusCode::NO_CONTENT)
