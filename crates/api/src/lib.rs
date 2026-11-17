@@ -12,7 +12,7 @@ pub mod routes;
 
 use axum::{
     Router,
-    routing::{get, post},
+    routing::{delete, get, post},
 };
 use sqlx::PgPool;
 
@@ -32,6 +32,23 @@ pub fn create_app(pool: PgPool) -> Router {
             get(routes::campaigns::get_campaign)
                 .patch(routes::campaigns::update_campaign)
                 .delete(routes::campaigns::delete_campaign),
+        )
+        .route("/campaigns/join", post(routes::invites::join_campaign))
+        .route(
+            "/campaigns/joined",
+            get(routes::campaigns::list_joined_campaigns),
+        )
+        .route(
+            "/campaigns/{id}/members",
+            get(routes::campaigns::list_members),
+        )
+        .route(
+            "/campaigns/{id}/invites",
+            post(routes::invites::create_invite).get(routes::invites::list_invites),
+        )
+        .route(
+            "/campaigns/{id}/invites/{invite_id}",
+            delete(routes::invites::revoke_invite),
         )
         .with_state(pool)
 }
