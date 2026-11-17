@@ -51,7 +51,10 @@ async fn test_only_gm_manages_invites() {
     let invite = create_invite(&app, &gm, &campaign).await;
     let code = invite["code"].as_str().unwrap();
     assert_eq!(code.len(), 8);
-    assert!(code.chars().all(|c| c.is_ascii_uppercase() || c.is_ascii_digit()));
+    assert!(
+        code.chars()
+            .all(|c| c.is_ascii_uppercase() || c.is_ascii_digit())
+    );
     assert_eq!(invite["campaign_id"], campaign["id"]);
     let listed = json_body(call(&app, "GET", &uri, None, Some(&gm)).await).await;
     assert_eq!(listed.as_array().unwrap().len(), 1);
