@@ -15,6 +15,7 @@ use crate::{
     models::{session::Session, user::User},
 };
 
+#[derive(Clone)]
 pub struct AuthUser {
     pub user: User,
     pub token_hash: String,
@@ -24,6 +25,9 @@ impl FromRequestParts<PgPool> for AuthUser {
     type Rejection = AppError;
 
     async fn from_request_parts(parts: &mut Parts, pool: &PgPool) -> Result<Self, Self::Rejection> {
+        if let Some(auth) = parts.extensions.get::<AuthUser>() {
+            return Ok(auth.clone());
+        }
         let jar = CookieJar::from_headers(&parts.headers);
         let token = jar
             .get(SESSION_COOKIE)
