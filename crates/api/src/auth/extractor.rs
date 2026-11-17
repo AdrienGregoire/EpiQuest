@@ -29,9 +29,14 @@ impl FromRequestParts<PgPool> for AuthUser {
             return Ok(auth.clone());
         }
         let jar = CookieJar::from_headers(&parts.headers);
-        let token = jar.get(SESSION_COOKIE).map(|c| c.value().to_owned()).ok_or_else(|| AppError::Unauthorized("Not authenticated".to_string()))?;
+        let token = jar
+            .get(SESSION_COOKIE)
+            .map(|c| c.value().to_owned())
+            .ok_or_else(|| AppError::Unauthorized("Not authenticated".to_string()))?;
         let token_hash = hash_token(&token);
-        let user = Session::find_user_by_token_hash(pool, &token_hash).await?.ok_or_else(|| AppError::Unauthorized("Invalid or expired session".to_string()))?;
+        let user = Session::find_user_by_token_hash(pool, &token_hash)
+            .await?
+            .ok_or_else(|| AppError::Unauthorized("Invalid or expired session".to_string()))?;
 
         Ok(AuthUser { user, token_hash })
     }
