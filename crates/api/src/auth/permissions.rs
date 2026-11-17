@@ -113,3 +113,21 @@ async fn authorize_campaign(
     parts.extensions.insert(CampaignContext { campaign, role });
     Ok(next.run(Request::from_parts(parts, body)).await)
 }
+
+// Unit Tests
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_member_requirement_accepts_every_role() {
+        assert!(Requirement::Member.is_met_by(Role::Gm));
+        assert!(Requirement::Member.is_met_by(Role::Player));
+    }
+
+    #[test]
+    fn test_gm_requirement_rejects_players() {
+        assert!(Requirement::Gm.is_met_by(Role::Gm));
+        assert!(!Requirement::Gm.is_met_by(Role::Player));
+    }
+}
