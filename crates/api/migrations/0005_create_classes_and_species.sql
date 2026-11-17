@@ -1,0 +1,18 @@
+CREATE TABLE classes (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    slug VARCHAR(100) NOT NULL UNIQUE,
+    name VARCHAR(100) NOT NULL,
+    hit_die SMALLINT NOT NULL,
+    data JSONB NOT NULL DEFAULT '{}',
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE TABLE species (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    slug VARCHAR(100) NOT NULL UNIQUE,
+    name VARCHAR(100) NOT NULL,
+    speed INTEGER NOT NULL,
+    size VARCHAR(20) NOT NULL,
+    data JSONB NOT NULL DEFAULT '{}',
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
