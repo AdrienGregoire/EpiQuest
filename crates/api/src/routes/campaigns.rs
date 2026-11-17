@@ -10,11 +10,15 @@ use axum::{
     extract::{Path, State},
     http::StatusCode,
 };
-use shared::{CampaignResponse, CreateCampaignRequest, UpdateCampaignRequest};
+use shared::{CampaignResponse, CreateCampaignRequest, MemberResponse, UpdateCampaignRequest};
 use sqlx::PgPool;
 use uuid::Uuid;
 
-use crate::{auth::extractor::AuthUser, error::AppError, models::campaign::Campaign};
+use crate::{
+    auth::extractor::AuthUser,
+    error::AppError,
+    models::{campaign::Campaign, member::Member},
+};
 
 const MAX_NAME_LEN: usize = 100;
 const MAX_DESCRITPION_LEN: usize = 2000;
@@ -44,7 +48,7 @@ fn validate_description(description: &str) -> Result<String, AppError> {
     Ok(description.to_string())
 }
 
-async fn find_owned(pool: &PgPool, id: Uuid, user_id: Uuid) -> Result<Campaign, AppError> {
+pub async fn find_owned(pool: &PgPool, id: Uuid, user_id: Uuid) -> Result<Campaign, AppError> {
     let campaign = Campaign::find_by_id(pool, id)
         .await?
         .ok_or_else(|| AppError::NotFound("Campaign not found".to_string()))?;
@@ -52,6 +56,19 @@ async fn find_owned(pool: &PgPool, id: Uuid, user_id: Uuid) -> Result<Campaign, 
     if campaign.gm_id != user_id {
         return Err(AppError::Forbidden(
             "Only the game master can access this campaign".to_string(),
+        ));
+    }
+    Ok(campaign)
+}
+
+async fn find_accessible(pool: &PgPool, id: Uuid, user_id: Uuid) -> Result<Campaign, AppError> {
+    let campaign = Campaign::find_by_id(pool, id)
+        .await?
+        .ok_or_else(|| AppError::NotFound("Campaign not found".to_string()))?;
+
+    if campaign.gm_id != user_id && !Member::is_member(pool, id, user_id).await? {
+        return Err(AppError::Forbidden(
+            "You are not part of this campaign".to_string(),
         ));
     }
     Ok(campaign)
@@ -85,7 +102,7 @@ pub async fn get_campaign(
     auth: AuthUser,
     Path(id): Path<Uuid>,
 ) -> Result<Json<CampaignResponse>, AppError> {
-    let campaign = find_owned(&pool, id, auth.user.id).await?;
+    let campaign = find_accessible(&pool, id, auth.user.id).await?;
 
     Ok(Json(campaign.into()))
 }
@@ -123,4 +140,28 @@ pub async fn delete_campaign(
 
     Campaign::delete(&pool, campaign.id).await?;
     Ok(StatusCode::NO_CONTENT)
+}
+
+pub async fn list_joined_campaigns(
+    State(pool): State<PgPool>,
+    auth: AuthUser,
+) -> Result<Json<Vec<CampaignResponse>>, AppError> {
+    let campaigns = Campaign::list_joined_by(&pool, auth.user.id).await?;
+
+    Ok(Json(
+        campaigns.into_iter().map(CampaignResponse::from).collect(),
+    ))
+}
+
+pub async fn list_members(
+    State(pool): State<PgPool>,
+    auth: AuthUser,
+    Path(id): Path<Uuid>,
+) -> Result<Json<Vec<MemberResponse>>, AppError> {
+    let campaign = find_accessible(&pool, id, auth.user.id).await?;
+    let members = Member::list_for_campaign(&pool, campaign.id).await?;
+
+    Ok(Json(
+        members.into_iter().map(MemberResponse::from).collect(),
+    ))
 }
