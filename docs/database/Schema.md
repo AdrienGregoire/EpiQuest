@@ -59,5 +59,46 @@ Migrations: `crates/api/migrations/0001` → `0009`.
 | description | TEXT | NOT NULL DEFAULT '' | Description |
 | created_at | TIMESTAMPTZ | NOT NULL DEFAULT NOW() | Created at |
 | updated_at | TIMESTAMPTZ | NOT NULL DEFAULT NOW() | Updated at |
+
 ### `campaign_members` / `campaign_invites` `0004`
 Members use a composite PK (`campaign_id` + `user_id`). Invites use a unique `code`.
+
+---
+
+## SRD catalog
+### `classes` `0005`
+| Field | Type | Constraints | Description |
+|-------|------|-------------|-------------|
+| id | UUID | PK | Identifier |
+| slug | VARCHAR(100) | UNIQUE NOT NULL | Stable SRD key (`fighter`) |
+| name | VARCHAR(100) | NOT NULL | Display name |
+| hit_die | SMALLINT | NOT NULL | Hit die (6/8/10/12) |
+| data | JSONB | NOT NULL DEFAULT '{}' | Features, saves… |
+| created_at | TIMESTAMPTZ | NOT NULL DEFAULT NOW() | Created at |
+
+### `species` `0005`
+| Field | Type | Constraints | Description |
+|-------|------|-------------|-------------|
+| id | UUID | PK | Identifier |
+| slug | VARCHAR(100) | UNIQUE NOT NULL | Stable SRD key (`elf`) |
+| name | VARCHAR(100) | NOT NULL | Display name |
+| speed | INTEGER | NOT NULL | Movement speed |
+| size | VARCHAR(20) | NOT NULL | Medium, Small… |
+| data | JSONB | NOT NULL DEFAULT '{}' | Traits, ASI… |
+| created_at | TIMESTAMPTZ | NOT NULL DEFAULT NOW() | Created at |
+
+### `spells` `0006`
+| Field | Type | Constraints | Description |
+|-------|------|-------------|-------------|
+| id | UUID | PK | Identifier |
+| slug | VARCHAR(150) | UNIQUE NOT NULL | Stable SRD key |
+| name | VARCHAR(150) | NOT NULL | Spell name |
+| level | SMALLINT | NOT NULL | 0 = cantrip, 1–9 |
+| school | VARCHAR(50) | NOT NULL | Magic school |
+| casting_time | TEXT | NOT NULL | Casting time |
+| range | TEXT | NOT NULL | Range |
+| duration | TEXT | NOT NULL | Duration |
+| components | TEXT | NOT NULL DEFAULT '' | V/S/M |
+| data | JSONB | NOT NULL DEFAULT '{}' | Description, upcast… |
+| created_at | TIMESTAMPTZ | NOT NULL DEFAULT NOW() | Created at |
+Index: `spells_level_idx (level)`
