@@ -102,3 +102,177 @@ Members use a composite PK (`campaign_id` + `user_id`). Invites use a unique `co
 | data | JSONB | NOT NULL DEFAULT '{}' | Description, upcast… |
 | created_at | TIMESTAMPTZ | NOT NULL DEFAULT NOW() | Created at |
 Index: `spells_level_idx (level)`
+
+### `items` `0006`
+| Field | Type | Constraints | Description |
+|-------|------|-------------|-------------|
+| id | UUID | PK | Identifier |
+| slug | VARCHAR(150) | UNIQUE NOT NULL | Stable SRD key |
+| name | VARCHAR(150) | NOT NULL | Item name |
+| item_type | VARCHAR(50) | NOT NULL | weapon, armor, gear, magic… |
+| rarity | VARCHAR(50) | NULL | common, rare… |
+| data | JSONB | NOT NULL DEFAULT '{}' | Stats, effects… |
+| created_at | TIMESTAMPTZ | NOT NULL DEFAULT NOW() | Created at |
+Index: `items_item_type_idx (item_type)`
+
+### `monsters` `0006`
+| Field | Type | Constraints | Description |
+|-------|------|-------------|-------------|
+| id | UUID | PK | Identifier |
+| slug | VARCHAR(150) | UNIQUE NOT NULL | Stable SRD key |
+| name | VARCHAR(150) | NOT NULL | Monster name |
+| challenge_rating | NUMERIC(4,2) | NOT NULL | CR |
+| size | VARCHAR(20) | NOT NULL | Size |
+| monster_type | VARCHAR(50) | NOT NULL | beast, undead… |
+| data | JSONB | NOT NULL DEFAULT '{}' | Full stat block |
+| created_at | TIMESTAMPTZ | NOT NULL DEFAULT NOW() | Created at |
+Index: `monsters_cr_idx (challenge_rating)`
+---
+## Character
+
+### `characters` `0007`
+| Field | Type | Constraints | Description |
+|-------|------|-------------|-------------|
+| id | UUID | PK | Identifier |
+| campaign_id | UUID | FK → campaigns CASCADE | Campaign |
+| owner_id | UUID | FK → users | Owner player |
+| name | VARCHAR(100) | NOT NULL | Character name |
+| class_id | UUID | FK → classes | Class |
+| species_id | UUID | FK → species | Species |
+| level | SMALLINT | NOT NULL DEFAULT 1 | Level |
+| hp_current | INTEGER | NOT NULL | Current HP |
+| hp_max | INTEGER | NOT NULL | Max HP |
+| armor_class | INTEGER | NOT NULL DEFAULT 10 | AC |
+| data | JSONB | NOT NULL DEFAULT '{}' | Abilities, skills… |
+| created_at | TIMESTAMPTZ | NOT NULL DEFAULT NOW() | Created at |
+| updated_at | TIMESTAMPTZ | NOT NULL DEFAULT NOW() | Updated at |
+Indexes: `characters_campaign_id_idx`, `characters_owner_id_idx`
+
+### `character_spells` `0007`
+| Field | Type | Constraints | Description |
+|-------|------|-------------|-------------|
+| character_id | UUID | FK → characters CASCADE, PK | Character |
+| spell_id | UUID | FK → spells CASCADE, PK | Spell |
+| prepared | BOOLEAN | NOT NULL DEFAULT false | Prepared |
+
+### `character_items` `0007`
+| Field | Type | Constraints | Description |
+|-------|------|-------------|-------------|
+| character_id | UUID | FK → characters CASCADE, PK | Character |
+| item_id | UUID | FK → items CASCADE, PK | Item |
+| quantity | INTEGER | NOT NULL DEFAULT 1 | Quantity |
+---
+
+## Map / VTT
+
+### `maps` `0008`
+| Field | Type | Constraints | Description |
+|-------|------|-------------|-------------|
+| id | UUID | PK | Identifier |
+| campaign_id | UUID | FK → campaigns CASCADE | Campaign |
+| name | VARCHAR(100) | NOT NULL | Map name |
+| width | INTEGER | NOT NULL | Width (cells) |
+| height | INTEGER | NOT NULL | Height (cells) |
+| grid_size | INTEGER | NOT NULL DEFAULT 70 | Pixels per cell |
+| background_url | TEXT | NULL | Background image |
+| data | JSONB | NOT NULL DEFAULT '{}' | Walls, fog… |
+| created_at | TIMESTAMPTZ | NOT NULL DEFAULT NOW() | Created at |
+| updated_at | TIMESTAMPTZ | NOT NULL DEFAULT NOW() | Updated at |
+Index: `maps_campaign_id_idx`
+
+### `map_layers` `0008`
+| Field | Type | Constraints | Description |
+|-------|------|-------------|-------------|
+| id | UUID | PK | Identifier |
+| map_id | UUID | FK → maps CASCADE | Parent map |
+| name | VARCHAR(100) | NOT NULL | Layer name |
+| layer_type | VARCHAR(50) | NOT NULL | background, tokens, fog, walls, dm… |
+| z_index | INTEGER | NOT NULL DEFAULT 0 | Draw order |
+| visible | BOOLEAN | NOT NULL DEFAULT true | Visibility |
+| data | JSONB | NOT NULL DEFAULT '{}' | Layer content |
+| created_at | TIMESTAMPTZ | NOT NULL DEFAULT NOW() | Created at |
+Index: `map_layers_map_id_idx`
+
+### `pawns` `0008`
+| Field | Type | Constraints | Description |
+|-------|------|-------------|-------------|
+| id | UUID | PK | Identifier |
+| map_id | UUID | FK → maps CASCADE | Map |
+| layer_id | UUID | FK → map_layers SET NULL, NULL | Layer |
+| character_id | UUID | FK → characters SET NULL, NULL | Linked character |
+| monster_id | UUID | FK → monsters SET NULL, NULL | Linked monster |
+| name | VARCHAR(100) | NOT NULL | Token label |
+| x | INTEGER | NOT NULL DEFAULT 0 | Grid X |
+| y | INTEGER | NOT NULL DEFAULT 0 | Grid Y |
+| rotation | REAL | NOT NULL DEFAULT 0 | Degrees |
+| size | SMALLINT | NOT NULL DEFAULT 1 | Cells occupied |
+| visible_to_players | BOOLEAN | NOT NULL DEFAULT true | Player visibility |
+| data | JSONB | NOT NULL DEFAULT '{}' | Metadata |
+| created_at | TIMESTAMPTZ | NOT NULL DEFAULT NOW() | Created at |
+| updated_at | TIMESTAMPTZ | NOT NULL DEFAULT NOW() | Updated at |
+Index: `pawns_map_id_idx`
+---
+
+## Encounter / combat / roll
+
+### `encounters` `0009`
+| Field | Type | Constraints | Description |
+|-------|------|-------------|-------------|
+| id | UUID | PK | Identifier |
+| campaign_id | UUID | FK → campaigns CASCADE | Campaign |
+| map_id | UUID | FK → maps SET NULL, NULL | Linked map |
+| name | VARCHAR(100) | NOT NULL | Name |
+| status | VARCHAR(20) | NOT NULL DEFAULT 'draft' | draft / ready / active / completed |
+| data | JSONB | NOT NULL DEFAULT '{}' | Composition, GM notes |
+| created_at | TIMESTAMPTZ | NOT NULL DEFAULT NOW() | Created at |
+| updated_at | TIMESTAMPTZ | NOT NULL DEFAULT NOW() | Updated at |
+Index: `encounters_campaign_id_idx`
+
+### `combats` `0009`
+| Field | Type | Constraints | Description |
+|-------|------|-------------|-------------|
+| id | UUID | PK | Identifier |
+| encounter_id | UUID | FK → encounters CASCADE | Encounter |
+| campaign_id | UUID | FK → campaigns CASCADE | Campaign |
+| map_id | UUID | FK → maps SET NULL, NULL | Map |
+| status | VARCHAR(20) | NOT NULL DEFAULT 'active' | active / paused / ended |
+| round | INTEGER | NOT NULL DEFAULT 1 | Current round |
+| current_turn_index | INTEGER | NOT NULL DEFAULT 0 | Initiative index |
+| started_at | TIMESTAMPTZ | NOT NULL DEFAULT NOW() | Start time |
+| ended_at | TIMESTAMPTZ | NULL | End time |
+| data | JSONB | NOT NULL DEFAULT '{}' | Initiative order, state |
+Indexes: `combats_campaign_id_idx`, `combats_encounter_id_idx`
+
+### `rolls` `0009`
+| Field | Type | Constraints | Description |
+|-------|------|-------------|-------------|
+| id | UUID | PK | Identifier |
+| campaign_id | UUID | FK → campaigns CASCADE | Campaign |
+| combat_id | UUID | FK → combats SET NULL, NULL | Linked combat |
+| user_id | UUID | FK → users | Who rolled |
+| character_id | UUID | FK → characters SET NULL, NULL | Linked character |
+| formula | TEXT | NOT NULL | e.g. `1d20+5` |
+| total | INTEGER | NOT NULL | Final result |
+| roll_type | VARCHAR(50) | NOT NULL | attack, save, check, damage, custom |
+| is_private | BOOLEAN | NOT NULL DEFAULT false | GM-only roll |
+| data | JSONB | NOT NULL DEFAULT '{}' | Dice breakdown |
+| created_at | TIMESTAMPTZ | NOT NULL DEFAULT NOW() | Roll time |
+Indexes: `rolls_campaign_id_idx`, `rolls_combat_id_idx`
+---
+
+## Ticket entity → table mapping
+| Entity | Table |
+|--------|-------|
+| campaign | `campaigns` |
+| character | `characters` |
+| class | `classes` |
+| species | `species` |
+| spell | `spells` |
+| item | `items` |
+| monster | `monsters` |
+| map | `maps` |
+| layer | `map_layers` |
+| pawn | `pawns` |
+| encounter | `encounters` |
+| combat | `combats` |
+| roll | `rolls` |
