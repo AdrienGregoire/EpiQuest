@@ -4,4 +4,10 @@ version.workspace = true
 edition.workspace = true
 publish.workspace = true
 
+[dev-dependencies]
+rand = { workspace = true }
+
 [dependencies]
+thiserror.workspace = true
+rand.workspace = true
+serde.workspace = true
