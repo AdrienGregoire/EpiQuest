@@ -6,24 +6,34 @@
  */
 
 use crate::ast::{DiceModifier, Expr, ExprTerm, Operator};
-use crate::error::DiceError;
-use crate::lexer::Token;
+use crate::error::{DiceError, Span, SyntaxError};
+use crate::lexer::{SpannedToken, Token};
 
 struct Parser {
-    tokens: Vec<Token>,
+    tokens: Vec<SpannedToken>,
     pos: usize,
+    eof: Span,
 }
 
 impl Parser {
-    fn new(tokens: Vec<Token>) -> Self {
-        Self { tokens, pos: 0 }
+    fn new(tokens: Vec<SpannedToken>) -> Self {
+        let eof = Span::at(tokens.last().map_or(0, |t| t.span.end));
+        Self {
+            tokens,
+            pos: 0,
+            eof,
+        }
     }
 
-    fn peek(&self) -> Option<&Token> {
+    fn peek(&self) -> Option<&SpannedToken> {
         self.tokens.get(self.pos)
     }
 
-    fn advance(&mut self) -> Option<&Token> {
+    fn peek_token(&self) -> Option<&Token> {
+        self.peek().map(|t| &t.token)
+    }
+
+    fn advance(&mut self) -> Option<&SpannedToken> {
         let tok = self.tokens.get(self.pos);
         if tok.is_some() {
             self.pos += 1;
@@ -31,12 +41,41 @@ impl Parser {
         tok
     }
 
-    fn expect_number(&mut self) -> Result<u32, DiceError> {
-        match self.advance() {
-            Some(Token::Number(n)) => Ok(*n),
-            other => Err(DiceError::ParseError(format!(
-                "Expected a number, got {other:?}"
-            ))),
+    fn error_here(&self, message: impl Into<String>, hint: impl Into<String>) -> DiceError {
+        let span = self.peek().map_or(self.eof, |t| t.span);
+        DiceError::Syntax(SyntaxError::new(message, span).with_hint(hint))
+    }
+
+    fn expected(&self, what: &str, hint: &str) -> DiceError {
+        let found = match self.peek_token() {
+            Some(tok) => format!("found '{tok}'"),
+            None => "but the expression ends here".to_string(),
+        };
+        self.error_here(format!("Expected {what}, {found}"), hint)
+    }
+
+    fn expect_number(&mut self, what: &str, hint: &str) -> Result<(u32, Span), DiceError> {
+        match self.peek() {
+            Some(SpannedToken {
+                token: Token::Number(n),
+                span,
+            }) => {
+                let found = (*n, *span);
+                self.pos += 1;
+                Ok(found)
+            }
+            _ => Err(self.expected(what, hint)),
+        }
+    }
+
+    fn reject_modifier(
+        &self,
+        message: impl FnOnce(&Token) -> String,
+        hint: &str,
+    ) -> Result<(), DiceError> {
+        match self.peek_token() {
+            Some(tok) if tok.is_modifier() => Err(self.error_here(message(tok), hint)),
+            _ => Ok(()),
         }
     }
 
@@ -44,7 +83,7 @@ impl Parser {
         let first_term = self.parse_term()?;
         let mut terms = vec![(Operator::Add, first_term)];
 
-        while let Some(tok) = self.peek() {
+        while let Some(tok) = self.peek_token() {
             let op = match tok {
                 Token::Plus => Operator::Add,
                 Token::Minus => Operator::Sub,
@@ -58,103 +97,162 @@ impl Parser {
     }
 
     fn parse_term(&mut self) -> Result<ExprTerm, DiceError> {
-        let num = self.expect_number()?;
-
-        if self.peek() == Some(&Token::D) {
-            self.advance();
-            let sides = self.expect_number()?;
-
-            if sides == 0 {
-                return Err(DiceError::InvalidDice(
-                    "Number of sides must be at least 1".to_string(),
-                ));
-            }
-            if num == 0 {
-                return Err(DiceError::InvalidDice(
-                    "Number of dice must be at least 1".to_string(),
-                ));
-            }
-
-            let modifier = self.parse_modifier(num)?;
-
-            Ok(ExprTerm::Dice {
-                count: num,
-                sides,
-                modifier,
-            })
-        } else {
-            Ok(ExprTerm::Constant(i64::from(num)))
+        if self.peek_token() == Some(&Token::D) {
+            return Err(self.error_here(
+                "Missing number of dice before 'd'",
+                "Write 1d20 instead of d20",
+            ));
         }
+
+        let (num, num_span) = self.expect_number(
+            "a number or a dice roll",
+            "Write a number (3) or dice (1d6), e.g. 2d6+3",
+        )?;
+
+        if self.peek_token() != Some(&Token::D) {
+            self.reject_modifier(
+                |tok| format!("'{tok}' can only follow dice, not a plain number"),
+                "Example: 4d6kh3",
+            )?;
+            return Ok(ExprTerm::Constant(i64::from(num)));
+        }
+        self.advance();
+
+        let (sides, sides_span) = self.expect_number(
+            "the number of sides after 'd'",
+            "Example: 2d6 rolls two six-sided dice",
+        )?;
+
+        if sides == 0 {
+            return Err(DiceError::Syntax(
+                SyntaxError::new("A die needs at least 1 side", sides_span)
+                    .with_hint("Example: 1d6"),
+            ));
+        }
+        if num == 0 {
+            return Err(DiceError::Syntax(
+                SyntaxError::new("You must roll at least 1 die", num_span)
+                    .with_hint("Example: 1d6"),
+            ));
+        }
+
+        let modifier = self.parse_modifier(num, sides)?;
+        self.reject_modifier(
+            |tok| {
+                format!(
+                    "Only one modifier (kh, kl, dh, dl, ! or r) is allowed per dice group, '{tok}' is extra"
+                )
+            },
+            "Keep a single modifier, e.g. 4d6kh3",
+        )?;
+
+        Ok(ExprTerm::Dice {
+            count: num,
+            sides,
+            modifier,
+        })
     }
 
-    fn parse_modifier(&mut self, dice_count: u32) -> Result<Option<DiceModifier>, DiceError> {
-        match self.peek() {
-            Some(Token::Kh) => {
-                self.advance();
-                let n = self.expect_number()?;
-                if n > dice_count {
-                    return Err(DiceError::InvalidDice(format!(
-                        "Cannot keep {n} dice when only rolling {dice_count}"
-                    )));
+    fn parse_modifier(
+        &mut self,
+        dice_count: u32,
+        sides: u32,
+    ) -> Result<Option<DiceModifier>, DiceError> {
+        let Some(SpannedToken { token, span }) = self.peek().cloned() else {
+            return Ok(None);
+        };
+        let modifier = match token {
+            Token::Kh => DiceModifier::KeepHighest(self.keep_count(&token, dice_count)?),
+            Token::Kl => DiceModifier::KeepLowest(self.keep_count(&token, dice_count)?),
+            Token::Dh => DiceModifier::DropHighest(self.drop_count(&token, dice_count)?),
+            Token::Dl => DiceModifier::DropLowest(self.drop_count(&token, dice_count)?),
+            Token::Bang => {
+                if sides == 1 {
+                    return Err(DiceError::Syntax(
+                        SyntaxError::new("Exploding dice need at least 2 sides", span).with_hint(
+                            "A 1-sided die always rolls its maximum, so it would explode forever",
+                        ),
+                    ));
                 }
-                Ok(Some(DiceModifier::KeepHighest(n)))
-            }
-            Some(Token::Kl) => {
                 self.advance();
-                let n = self.expect_number()?;
-                if n > dice_count {
-                    return Err(DiceError::InvalidDice(format!(
-                        "Cannot keep {n} dice when only rolling {dice_count}"
-                    )));
-                }
-                Ok(Some(DiceModifier::KeepLowest(n)))
+                DiceModifier::Exploding
             }
-            Some(Token::Dh) => {
-                self.advance();
-                let n = self.expect_number()?;
-                if n >= dice_count {
-                    return Err(DiceError::InvalidDice(format!(
-                        "Cannot drop {n} dice when only rolling {dice_count}"
-                    )));
-                }
-                Ok(Some(DiceModifier::DropHighest(n)))
-            }
-            Some(Token::Dl) => {
-                self.advance();
-                let n = self.expect_number()?;
-                if n >= dice_count {
-                    return Err(DiceError::InvalidDice(format!(
-                        "Cannot drop {n} dice when only rolling {dice_count}"
-                    )));
-                }
-                Ok(Some(DiceModifier::DropLowest(n)))
-            }
-            Some(Token::Bang) => {
-                self.advance();
-                Ok(Some(DiceModifier::Exploding))
-            }
-            Some(Token::R) => {
-                self.advance();
-                let threshold = self.expect_number()?;
-                Ok(Some(DiceModifier::Reroll(threshold)))
-            }
-            _ => Ok(None),
+            Token::R => DiceModifier::Reroll(self.number_after(&token)?.0),
+            _ => return Ok(None),
+        };
+        Ok(Some(modifier))
+    }
+
+    fn number_after(&mut self, token: &Token) -> Result<(u32, Span), DiceError> {
+        self.advance();
+        let (what, hint) = match token {
+            Token::Kh => (
+                "the number of dice to keep after 'kh'",
+                "Example: 4d6kh3 keeps the 3 highest dice",
+            ),
+            Token::Kl => (
+                "the number of dice to keep after 'kl'",
+                "Example: 2d20kl1 keeps the lowest die",
+            ),
+            Token::Dh => (
+                "the number of dice to drop after 'dh'",
+                "Example: 4d6dh1 drops the highest die",
+            ),
+            Token::Dl => (
+                "the number of dice to drop after 'dl'",
+                "Example: 4d6dl1 drops the lowest die",
+            ),
+            _ => (
+                "the value to reroll after 'r'",
+                "Example: 1d6r1 rerolls a 1 (once)",
+            ),
+        };
+        self.expect_number(what, hint)
+    }
+
+    fn keep_count(&mut self, token: &Token, dice_count: u32) -> Result<u32, DiceError> {
+        let (n, n_span) = self.number_after(token)?;
+        if n > dice_count {
+            return Err(DiceError::Syntax(
+                SyntaxError::new(
+                    format!("Cannot keep {n} dice when only rolling {dice_count}"),
+                    n_span,
+                )
+                .with_hint(format!("Keep at most {dice_count}")),
+            ));
         }
+        Ok(n)
+    }
+
+    fn drop_count(&mut self, token: &Token, dice_count: u32) -> Result<u32, DiceError> {
+        let (n, n_span) = self.number_after(token)?;
+        if n >= dice_count {
+            return Err(DiceError::Syntax(
+                SyntaxError::new(
+                    format!("Cannot drop {n} dice when only rolling {dice_count}"),
+                    n_span,
+                )
+                .with_hint(format!(
+                    "At least one die must remain: drop at most {}",
+                    dice_count - 1
+                )),
+            ));
+        }
+        Ok(n)
     }
 }
 
-pub fn parse(tokens: Vec<Token>) -> Result<Expr, DiceError> {
+pub fn parse(tokens: Vec<SpannedToken>) -> Result<Expr, DiceError> {
     let mut parser = Parser::new(tokens);
     let expr = parser.parse_expr()?;
 
-    if parser.pos < parser.tokens.len() {
-        return Err(DiceError::ParseError(format!(
-            "Unexpected token at position {}: {:?}",
-            parser.pos, parser.tokens[parser.pos]
-        )));
+    match parser.peek_token() {
+        None => Ok(expr),
+        Some(tok) => Err(parser.error_here(
+            format!("Missing '+' or '-' before '{tok}'"),
+            "Join terms with + or -, e.g. 2d6+3",
+        )),
     }
-
-    Ok(expr)
 }
 
 #[cfg(test)]

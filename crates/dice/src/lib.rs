@@ -14,7 +14,7 @@ pub mod roller;
 use rand::Rng;
 
 pub use ast::{DiceModifier, Expr, ExprTerm, Operator};
-pub use error::DiceError;
+pub use error::{DiceError, Span, SyntaxError};
 pub use roller::RollResult;
 
 pub fn parse(input: &str) -> Result<Expr, DiceError> {
