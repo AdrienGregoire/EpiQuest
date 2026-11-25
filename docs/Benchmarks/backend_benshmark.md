@@ -1,41 +1,52 @@
-# Benchmark: Backend Language and Runtime
+# Benchmark: Database Selection
 
-Which backend stack should be chosen for EpiQuest at the start of the project? This document compares three candidate stacks for managing real-time synchronization between the two views (DM / Players), the D&D 5e SRD rules engine, and 2D line-of-sight (fog of war) calculations.
+Which database technology should be selected for EpiQuest at the start of the project? This document compares the available options to handle both highly structured relational data (users, campaigns, character sheets) and heterogeneous 5e SRD content (spells, monsters, features).
 
-**In short:** **Rust** is selected. Its high execution speed guarantees smooth 2D vision calculations without frame drops, its asynchronous runtime provides minimal latency over WebSockets, and its strict type system prevents secret DM information from leaking into the player view.
+**In short:** **PostgreSQL** is selected. Its native `JSONB` support provides the flexibility required to import and query the SRD without sacrificing the relational integrity needed for users, campaigns, and combat action history.
 
 ## Comparative Overview
 
-### Backend Choice: Why Rust?
+### Database Choice: Why PostgreSQL?
 
-Quick comparison justifying the stack choice for EpiQuest's immediate requirements (dual-screen sync, line-of-sight calculations, and rules engine).
+EpiQuest requires linking highly structured relational entities (users, campaigns) with complex, highly variable game data (5e SRD monsters, spells, and magic items).
 
-| Criterion | Rust (Axum / Actix) | Node.js (TypeScript) | Go |
+| Criterion | PostgreSQL | MongoDB (NoSQL) | SQLite |
 | :--- | :--- | :--- | :--- |
-| **Raw Performance** (Grid calculations, rules engine) | **Excellent** | Average | Good |
-| **Real-time Capabilities** (DM / Player synchronization) | **Excellent** (ultra-low latency) | Good (native WebSockets) | Very good |
-| **Reliability & Security** | **Maximum** (compiler prevents data leaks) | Good | Good |
-| **Verdict for the Project** | **Selected**: Essential for calculating line of sight without blocking the server. | **Discarded**: Risk of lag on the map during large combat encounters. | **Discarded**: Rust provides stricter typing for modeling the 5e SRD. |
+| **Relationship Management** (Players $\leftrightarrow$ Campaigns) | **Excellent** (foreign keys, integrity) | Complex | Good |
+| **Data Flexibility** (5e SRD import, variable spells) | **Excellent** (via powerful `JSONB` type) | **Excellent** (document-oriented) | Basic |
+| **Combat Reliability** (Logs & undo support) | **Excellent** (ACID transactions) | Good | Poor (write-locking issues) |
+| **Verdict for the Project** | **Selected**: The ideal balance (combines the best of SQL and NoSQL). | **Discarded**: Overly complex for handling entity relationships. | **Discarded**: Cannot handle concurrent sessions in production. |
 
-## Technical Constraints
+## Detailed Analysis of Technical Constraints
 
-* **Smooth 60 FPS ($< 16.6\text{ ms}$ per frame)**: The player view (displayed on a TV or second screen) must instantly reflect token movements and actions performed by the DM.
-* **2D Line of Sight (Shadowcasting)**: Dynamic geometric calculation of visible areas on a grid through walls and doors.
-* **DM Data Isolation**: Secret DM notes, hidden monsters, and traps must never be present in serialized data sent over the network to the player view.
+1. **Hybrid Data Model**:
+   - *Strict Relational*: `User`, `Campaign`, `Character`, `Session`.
+   - *JSONB Documents*: Spell mechanics, monster stat blocks, custom DM combat effects.
+2. **Assisted Combat & Rollbacks (ACID)**:
+   - Each combat action records state changes (HP, conditions, spent spell slots) in a transaction. In case of DM correction or undo, rollback must be immediate and atomic.
+3. **Replayable 5e SRD Import**:
+   - SRD data (from Open5e or JSON files) can be inserted directly into indexed `JSONB` columns without creating dozens of rigid relational tables.
 
-## Preliminary Micro-Benchmark Results
+## PostgreSQL vs MongoDB Atlas
 
-Measurements taken across 1,000 line-of-sight calculations ($30 \times 30$ grid, 50 walls):
+MongoDB Atlas (managed cloud MongoDB with a free tier) was the main alternative considered. Key differences:
 
-| Stack | Line of Sight Computation (median / p99) | WebSocket Broadcast Latency | Memory Footprint |
-| :--- | :--- | :--- | :--- |
-| **Rust (Axum + Tokio)** | $0.8\text{ ms} / 1.2\text{ ms}$ | $< 2\text{ ms}$ | $\sim 15\text{ MB}$ |
-| Go (Gin) | $2.6\text{ ms} / 7.1\text{ ms}$ | $< 5\text{ ms}$ | $\sim 30\text{ MB}$ |
-| Node.js (Fastify) | $16.4\text{ ms} / 35.0\text{ ms}$ | $\sim 12\text{ ms}$ | $\sim 60\text{ MB}$ |
+| Criterion | PostgreSQL | MongoDB Atlas |
+| :--- | :--- | :--- |
+| **Shared SRD catalog** (one spell known by many characters) | Native joins, no duplication | Duplicated in each document, or `$lookup` aggregations |
+| **Referential integrity** | Enforced by foreign keys | Must be enforced in application code |
+| **Variable content** (spells, monsters, homebrew) | `JSONB` with GIN indexes | Native documents (slight advantage) |
+| **Combat transactions** | Native ACID, row-level locking | Multi-document transactions supported but heavier |
+| **Rust ecosystem** | `sqlx` (compile-time checked queries, migrations) | Official driver + `serde`, no mature ODM |
+| **Schema changes during prototyping** | Migration required | No migration needed (main advantage) |
+| **Hosting** | Docker locally, any provider in production | Tied to Atlas for the managed offer |
+| **Team knowledge** | Already used by the team | New learning curve |
+
+**Assessment:** Atlas's real advantages (schema flexibility and fast prototyping) are largely covered by `JSONB`, while switching would sacrifice relational integrity and transactional reliability, which are central to campaigns, characters and combat.
 
 ## Recommendation
 
-| Role | Selected Technology | Reason |
+| Role | Selection | Reason |
 | :--- | :--- | :--- |
-| **Core EpiQuest Backend** | **Rust (Axum + Tokio)** | Sub-millisecond computation, strict compiler safety guarantees, and smooth dual-screen synchronization. |
-| To avoid | Node.js / Python | Heavy geometric computations block the single-threaded event loop. |
+| **Primary Database** | **PostgreSQL** | `JSONB` flexibility for SRD content combined with strong relational integrity and ACID transactions. |
+| Development Setup | **Docker Compose** | Instant, identical local database provisioning for all team members. |
