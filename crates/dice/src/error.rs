@@ -1,9 +1,9 @@
 /*
-** EPITECH PROJECT, 2026
-** error.rs
-** File description:
-** Error types for the dice crate
-*/
+ ** EPITECH PROJECT, 2026
+ ** error.rs
+ ** File description:
+ ** Error types for the dice crate
+ */
 
 use thiserror::Error;
 

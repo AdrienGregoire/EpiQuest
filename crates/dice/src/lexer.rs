@@ -1,9 +1,9 @@
 /*
-** EPITECH PROJECT, 2026
-** lexer.rs
-** File description:
-** Tokenizer for dice notation strings
-*/
+ ** EPITECH PROJECT, 2026
+ ** lexer.rs
+ ** File description:
+ ** Tokenizer for dice notation strings
+ */
 
 use crate::error::DiceError;
 
@@ -13,12 +13,12 @@ pub enum Token {
     D,
     Plus,
     Minus,
-    Kh, //Keep Highest
-    Kl, //Keep Lowest
-    Dh, //Drop Highest
-    Dl, //Drop Lowest
+    Kh,   //Keep Highest
+    Kl,   //Keep Lowest
+    Dh,   //Drop Highest
+    Dl,   //Drop Lowest
     Bang, //For exploding dice
-    R, //Reroll
+    R,    //Reroll
 }
 
 pub fn tokenize(input: &str) -> Result<Vec<Token>, DiceError> {
@@ -52,7 +52,9 @@ pub fn tokenize(input: &str) -> Result<Vec<Token>, DiceError> {
                     tokens.push(Token::Kl);
                     i += 2;
                 } else {
-                    return Err(DiceError::InvalidToken(format!("Expected 'kh' or 'kl' at position {i}")));
+                    return Err(DiceError::InvalidToken(format!(
+                        "Expected 'kh' or 'kl' at position {i}"
+                    )));
                 }
             }
             'd' => {
@@ -77,13 +79,15 @@ pub fn tokenize(input: &str) -> Result<Vec<Token>, DiceError> {
                     i += 1;
                 }
                 let num_str: String = chars[start..i].iter().collect();
-                let num = num_str.parse::<u32>().map_err(|_| {
-                    DiceError::InvalidToken(format!("Number too large: {num_str}"))
-                })?;
+                let num = num_str
+                    .parse::<u32>()
+                    .map_err(|_| DiceError::InvalidToken(format!("Number too large: {num_str}")))?;
                 tokens.push(Token::Number(num));
             }
             c => {
-                return Err(DiceError::InvalidToken(format!("Unexpected character '{c}' at position {i}")));
+                return Err(DiceError::InvalidToken(format!(
+                    "Unexpected character '{c}' at position {i}"
+                )));
             }
         }
     }

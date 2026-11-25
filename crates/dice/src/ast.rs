@@ -1,9 +1,9 @@
 /*
-** EPITECH PROJECT, 2026
-** ast.rs
-** File description:
-** Abstract Syntax Tree types for dice notation
-*/
+ ** EPITECH PROJECT, 2026
+ ** ast.rs
+ ** File description:
+ ** Abstract Syntax Tree types for dice notation
+ */
 
 use serde::{Deserialize, Serialize};
 
