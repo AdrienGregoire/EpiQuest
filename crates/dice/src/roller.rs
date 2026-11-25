@@ -82,10 +82,10 @@ fn roll_dice_group(
     for _ in 0..count {
         let mut value = rng.random_range(1..=sides);
 
-        if let Some(DiceModifier::Reroll(threshold)) = modifier {
-            if value <= *threshold {
-                value = rng.random_range(1..=sides);
-            }
+        if let Some(DiceModifier::Reroll(threshold)) = modifier
+            && value <= *threshold
+        {
+            value = rng.random_range(1..=sides);
         }
         if let Some(DiceModifier::Exploding) = modifier {
             if sides == 1 {
@@ -165,7 +165,7 @@ mod tests {
         assert_eq!(group.rolls.len(), 4);
         assert_eq!(group.kept.len(), 4);
         for &v in &group.rolls {
-            assert!(v >= 1 && v <= 6);
+            assert!((1..=6).contains(&v));
         }
     }
 
