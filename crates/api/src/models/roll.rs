@@ -33,16 +33,16 @@ impl Roll {
     ) -> Result<Roll, sqlx::Error> {
         sqlx::query_as::<_, Roll>(
             r#"
-            INSERT INTO rolls (campaign_id, user_id, notation, result, total)
-            VALUES ($1, $2, $3, $4, $5)
-            RETURNING id, campaign_id, user_id, notation, result, total, created_at
+            INSERT INTO rolls (campaign_id, user_id, formula, total, roll_type, data)
+            VALUES ($1, $2, $3, $4, 'manual', $5)
+            RETURNING id, campaign_id, user_id, formula AS notation, data AS result, total, created_at
             "#,
         )
         .bind(campaign_id)
         .bind(user_id)
         .bind(notation)
-        .bind(Json(result))
         .bind(total as i32)
+        .bind(Json(result))
         .fetch_one(pool)
         .await
     }
@@ -54,7 +54,7 @@ impl Roll {
     ) -> Result<Vec<Roll>, sqlx::Error> {
         sqlx::query_as::<_, Roll>(
             r#"
-            SELECT id, campaign_id, user_id, notation, result, total, created_at
+            SELECT id, campaign_id, user_id, formula AS notation, data AS result, total, created_at
             FROM rolls
             WHERE campaign_id = $1
             ORDER BY created_at DESC
