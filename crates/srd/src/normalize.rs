@@ -1,9 +1,9 @@
 /*
- ** EPITECH PROJECT, 2026
- ** normalize.rs
- ** File description:
- ** Open5e v2 JSON -> normalized SRD entries
- */
+** EPITECH PROJECT, 2026
+** EpiQuest
+** File description:
+** normalize.rs
+*/
 
 use crate::error::{Result, SrdError};
 use crate::model::{Class, Item, Monster, Species, Spell};
