@@ -5,13 +5,6 @@
 ** lib.rs
 */
 
-/*
- ** EPITECH PROJECT, 2026
- ** lib.rs
- ** File description:
- ** SRD importer: Open5e -> versioned snapshot -> PostgreSQL
- */
-
 pub mod error;
 pub mod importer;
 pub mod model;

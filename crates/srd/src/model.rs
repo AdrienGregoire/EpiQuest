@@ -9,7 +9,6 @@ use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use std::collections::{BTreeMap, HashSet};
 
-/// Bump when the on-disk snapshot format changes in a breaking way.
 pub const FORMAT_VERSION: u32 = 1;
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -70,16 +69,13 @@ pub struct FileEntry {
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct Manifest {
     pub format_version: u32,
-    /// Stable document key, e.g. `srd-2024` (SRD 5.2).
     pub document: String,
     pub document_name: String,
-    /// `open5e` or `manual`.
     pub source: String,
     pub source_url: Option<String>,
     pub license: String,
     pub generated_at: String,
     pub files: BTreeMap<String, FileEntry>,
-    /// Hash of all data files: identical content => identical checksum.
     pub checksum: String,
 }
 
@@ -115,7 +111,6 @@ fn check_slugs<'a>(
 }
 
 impl Snapshot {
-    /// Checks every constraint the database would reject, before touching it.
     pub fn validate(&self) -> Result<(), Vec<String>> {
         let mut errors = Vec::new();
 

@@ -10,7 +10,6 @@ use crate::model::{Class, Item, Monster, Species, Spell};
 use serde_json::{Map, Value};
 use std::collections::BTreeMap;
 
-/// Fields that only make sense inside Open5e and are dropped from `data`.
 const DROPPED_FIELDS: [&str; 3] = ["key", "document", "crossreferences"];
 
 fn err(kind: &'static str, key: &str, reason: impl Into<String>) -> SrdError {
@@ -25,7 +24,6 @@ fn key_of(raw: &Value) -> &str {
     raw.get("key").and_then(Value::as_str).unwrap_or("<no key>")
 }
 
-/// `srd-2024_acid-arrow` -> `acid-arrow`
 pub fn slug_from_key(key: &str, document: &str) -> String {
     key.strip_prefix(&format!("{document}_"))
         .unwrap_or(key)
@@ -40,7 +38,6 @@ fn str_field(raw: &Value, field: &str) -> Option<String> {
         .map(str::to_string)
 }
 
-/// Reads `{"name": "..."}` objects such as `school`, `size`, `type`, `category`.
 fn named_field(raw: &Value, field: &str) -> Option<String> {
     raw.get(field).and_then(|v| str_field(v, "name"))
 }
@@ -127,8 +124,6 @@ pub fn monsters(raws: &[Value], document: &str) -> Result<Vec<Monster>> {
     Ok(sort_by_slug(out, |m| &m.slug))
 }
 
-/// Merges mundane items and magic items. On a slug collision the magic
-/// version wins, because it carries strictly more information (rarity...).
 pub fn items(mundane: &[Value], magic: &[Value], document: &str) -> Result<Vec<Item>> {
     let mut by_slug: BTreeMap<String, Item> = BTreeMap::new();
 
@@ -153,7 +148,6 @@ pub fn items(mundane: &[Value], magic: &[Value], document: &str) -> Result<Vec<I
     Ok(by_slug.into_values().collect())
 }
 
-/// "D12" / "1d12" -> 12
 fn parse_hit_die(value: &str) -> Option<i16> {
     value
         .to_ascii_lowercase()
@@ -164,7 +158,6 @@ fn parse_hit_die(value: &str) -> Option<i16> {
         .ok()
 }
 
-/// Base classes only: subclasses are attached to `data.subclasses` of their parent.
 pub fn classes(raws: &[Value], document: &str) -> Result<Vec<Class>> {
     let parent_key = |raw: &Value| -> Option<String> {
         raw.get("subclass_of")
@@ -219,7 +212,6 @@ fn trait_desc(raw: &Value, trait_type: &str) -> Option<String> {
         .and_then(|t| str_field(t, "desc"))
 }
 
-/// "30 feet" -> 30
 fn first_number(text: &str) -> Option<i32> {
     let digits: String = text
         .chars()
@@ -230,7 +222,6 @@ fn first_number(text: &str) -> Option<i32> {
     digits.parse().ok()
 }
 
-/// "Medium (about 4-7 feet tall) or Small (...)" -> "Medium"
 fn first_size(text: &str) -> Option<String> {
     text.split_whitespace()
         .next()
