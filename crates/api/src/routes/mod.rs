@@ -8,3 +8,4 @@
 pub mod auth;
 pub mod campaigns;
 pub mod invites;
+pub mod rolls;

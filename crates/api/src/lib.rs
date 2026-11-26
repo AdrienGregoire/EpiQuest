@@ -43,6 +43,10 @@ pub fn create_app(pool: PgPool) -> Router {
             "/campaigns/{id}/members",
             get(routes::campaigns::list_members),
         )
+        .route(
+            "/campaigns/{id}/rolls",
+            post(routes::rolls::roll_dice).get(routes::rolls::get_rolls),
+        )
         .route_layer(from_fn_with_state(pool.clone(), require_member));
     let game_master = Router::new()
         .route(
