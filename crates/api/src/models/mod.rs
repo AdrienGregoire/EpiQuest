@@ -8,5 +8,6 @@
 pub mod campaign;
 pub mod invite;
 pub mod member;
+pub mod roll;
 pub mod session;
 pub mod user;

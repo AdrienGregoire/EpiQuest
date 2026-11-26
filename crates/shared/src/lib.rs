@@ -74,3 +74,19 @@ pub struct MemberResponse {
     pub role: String,
     pub joined_at: DateTime<chrono::Utc>,
 }
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct RollRequest {
+    pub notation: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct RollResponse {
+    pub id: Uuid,
+    pub campaign_id: Uuid,
+    pub user_id: Uuid,
+    pub notation: String,
+    pub result: serde_json::Value,
+    pub total: i64,
+    pub created_at: DateTime<chrono::Utc>,
+}
