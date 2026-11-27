@@ -1,0 +1,32 @@
+{
+  "format_version": 1,
+  "document": "srd-2024",
+  "document_name": "System Reference Document 5.2",
+  "source": "open5e",
+  "source_url": "https://api.open5e.com/v2",
+  "license": "CC-BY-4.0",
+  "generated_at": "2026-11-26T14:53:32.617308343+00:00",
+  "files": {
+    "classes": {
+      "count": 12,
+      "sha256": "d2eeb8fe4bff1f30801ce5dc67d0667588d7e803ff3772e1eba7c7c8c9b10bcd"
+    },
+    "items": {
+      "count": 963,
+      "sha256": "641db4746b171236bf67bc43d0c47f2598140d0ae910b6c85f99a3370943322f"
+    },
+    "monsters": {
+      "count": 331,
+      "sha256": "c2e0decfe019bae01474020f2ceb02b491c8fcae3db569eccf72cdd838132807"
+    },
+    "species": {
+      "count": 9,
+      "sha256": "8bf92d39605daac334aabf15c78deb5e1af3e0fdf7d920cfb5b1c40ea61b6476"
+    },
+    "spells": {
+      "count": 339,
+      "sha256": "e38335bb2f5379d488f223bb33cec3e6e4f252c728779f6e13a60824955d3b97"
+    }
+  },
+  "checksum": "a5f2cfc0a9945ffdb961475abd99d9af043595259fbc42dec31c10e0f89f7867"
+}
