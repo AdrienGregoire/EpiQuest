@@ -1,7 +1,7 @@
 # Field dictionary EpiQuest
 
 PostgreSQL schema documentation.
-Migrations: `crates/api/migrations/0001` → `0009`.
+Migrations: `crates/api/migrations/0001` → `0010`.
 
 ## Conventions
 | Rule | Detail |
@@ -121,7 +121,7 @@ Index: `items_item_type_idx (item_type)`
 | id | UUID | PK | Identifier |
 | slug | VARCHAR(150) | UNIQUE NOT NULL | Stable SRD key |
 | name | VARCHAR(150) | NOT NULL | Monster name |
-| challenge_rating | NUMERIC(4,2) | NOT NULL | CR |
+| challenge_rating | NUMERIC(5,3) | NOT NULL | CR (`0.125` = 1/8, widened in `0010`) |
 | size | VARCHAR(20) | NOT NULL | Size |
 | monster_type | VARCHAR(50) | NOT NULL | beast, undead… |
 | data | JSONB | NOT NULL DEFAULT '{}' | Full stat block |
@@ -258,6 +258,30 @@ Indexes: `combats_campaign_id_idx`, `combats_encounter_id_idx`
 | data | JSONB | NOT NULL DEFAULT '{}' | Dice breakdown |
 | created_at | TIMESTAMPTZ | NOT NULL DEFAULT NOW() | Roll time |
 Indexes: `rolls_campaign_id_idx`, `rolls_combat_id_idx`
+---
+
+## SRD import `0010`
+
+### `srd_imports` `0010`
+One row per successful import (see `docs/srd/IMPORTER.md`).
+| Field | Type | Constraints | Description |
+|-------|------|-------------|-------------|
+| id | UUID | PK | Identifier |
+| document | VARCHAR(50) | NOT NULL | SRD document key (`srd-2024`) |
+| format_version | INTEGER | NOT NULL | Snapshot format version |
+| checksum | VARCHAR(64) | NOT NULL | Snapshot checksum (sha256) |
+| source | TEXT | NOT NULL | `open5e` or `manual` |
+| counts | JSONB | NOT NULL DEFAULT '{}' | inserted / updated / unchanged / stale per table |
+| imported_at | TIMESTAMPTZ | NOT NULL DEFAULT NOW() | Import time |
+Index: `srd_imports_document_idx (document, imported_at DESC)`
+
+### Columns added to `classes`, `species`, `spells`, `items`, `monsters` `0010`
+| Field | Type | Constraints | Description |
+|-------|------|-------------|-------------|
+| source_document | VARCHAR(50) | NULL | SRD document that produced the row (NULL = not imported) |
+| content_hash | VARCHAR(64) | NULL | sha256 of the normalized entry, used to skip unchanged rows |
+| updated_at | TIMESTAMPTZ | NOT NULL DEFAULT NOW() | Last change by the importer |
+
 ---
 
 ## Ticket entity → table mapping
